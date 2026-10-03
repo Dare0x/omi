@@ -1,0 +1,35 @@
+{
+  "name": "omi",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "tsx scripts/test-river.ts && node --test --test-concurrency=1 scripts/test-contract.mjs",
+    "test:river": "tsx scripts/test-river.ts",
+    "test:contract": "node --test --test-concurrency=1 scripts/test-contract.mjs",
+    "compile": "node scripts/compile.mjs",
+    "backtest": "tsx scripts/backtest.ts",
+    "deploy": "node scripts/deploy.mjs",
+    "report": "node scripts/report.mjs",
+    "snapshot": "tsx scripts/snapshot.ts",
+    "sites": "node scripts/sites.mjs",
+    "replay": "node scripts/replay.mjs"
+  },
+  "dependencies": {
+    "ethers": "^6.17.0",
+    "next": "15.5.25",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "ganache": "^7.9.2",
+    "solc": "0.8.24",
+    "tsx": "^4.19.2",
+    "typescript": "^5"
+  }
+}

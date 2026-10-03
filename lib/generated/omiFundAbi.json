@@ -1,0 +1,927 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "usdc_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "manager_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "reporter_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "guardian_",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64",
+        "name": "challengeWindow_",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "BadHousehold",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "BadSettings",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DayNotAfterLast",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotGuardian",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotManager",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotReady",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotReporter",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OutOfOrder",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OutOfSeason",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReadingClosed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SeasonNotOver",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SeasonUnderway",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TooManyHouseholds",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TransferFailed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnknownSite",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroAmount",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "donor",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "Funded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "household",
+        "type": "address"
+      }
+    ],
+    "name": "HouseholdAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "household",
+        "type": "address"
+      }
+    ],
+    "name": "HouseholdRemoved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "perHousehold",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "households",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "total",
+        "type": "uint256"
+      }
+    ],
+    "name": "Payout",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "readingId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "day",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "observed",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "forecastMedianMax",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "sourceHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "readyAt",
+        "type": "uint64"
+      }
+    ],
+    "name": "ReadingPosted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "readingId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "streak",
+        "type": "uint32"
+      }
+    ],
+    "name": "ReadingSettled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "readingId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ReadingVetoed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "seasonStart",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "seasonEnd",
+        "type": "uint64"
+      }
+    ],
+    "name": "SeasonRenewed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "floodLevel",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "seasonStart",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "seasonEnd",
+        "type": "uint64"
+      }
+    ],
+    "name": "SiteAdded",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_HOUSEHOLDS",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address[]",
+        "name": "list",
+        "type": "address[]"
+      }
+    ],
+    "name": "addHouseholds",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "int32",
+        "name": "latE4",
+        "type": "int32"
+      },
+      {
+        "internalType": "int32",
+        "name": "lonE4",
+        "type": "int32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "floodLevel",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "warnLevel",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "seasonStart",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "seasonEnd",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint128",
+        "name": "coverPerHousehold",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint16",
+        "name": "earlyBps",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint8",
+        "name": "consecutiveDays",
+        "type": "uint8"
+      }
+    ],
+    "name": "addSite",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "challengeWindow",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "fund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "guardian",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      }
+    ],
+    "name": "households",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "isHousehold",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "manager",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextToSettle",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "day",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "observed",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "forecastMedianMax",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "sourceHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "postReading",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "readingId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "readingId",
+        "type": "uint256"
+      }
+    ],
+    "name": "reading",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "siteId",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "day",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "observed",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "forecastMedianMax",
+            "type": "uint32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "sourceHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "readyAt",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "vetoed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "settled",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct OmiFund.Reading",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "readingCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "h",
+        "type": "address"
+      }
+    ],
+    "name": "removeHousehold",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint64",
+        "name": "seasonStart",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "seasonEnd",
+        "type": "uint64"
+      }
+    ],
+    "name": "renewSeason",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "reporter",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "readingId",
+        "type": "uint256"
+      }
+    ],
+    "name": "settle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "max",
+        "type": "uint256"
+      }
+    ],
+    "name": "settleReady",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "done",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "siteId",
+        "type": "uint256"
+      }
+    ],
+    "name": "site",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "int32",
+            "name": "latE4",
+            "type": "int32"
+          },
+          {
+            "internalType": "int32",
+            "name": "lonE4",
+            "type": "int32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "floodLevel",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "warnLevel",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "seasonStart",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "seasonEnd",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint128",
+            "name": "coverPerHousehold",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint16",
+            "name": "earlyBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint8",
+            "name": "consecutiveDays",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "earlyPaid",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "fullPaid",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint128",
+            "name": "paidPerHousehold",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint256",
+            "name": "balance",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint32",
+            "name": "lastSettledDay",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "lastPostedDay",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "streak",
+            "type": "uint32"
+          }
+        ],
+        "internalType": "struct OmiFund.Site",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "siteCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalPaid",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "usdc",
+    "outputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "readingId",
+        "type": "uint256"
+      }
+    ],
+    "name": "veto",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
