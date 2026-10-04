@@ -37,7 +37,7 @@ Every number comes from deterministic code. No AI model produces or changes any 
 
 | | |
 |---|---|
-| App | *(Vercel URL)* |
+| App | https://omi-one-lac.vercel.app |
 | Contract, Arc testnet | see `deployments/arc-testnet.json` |
 | Contract, Arc mainnet | see `deployments/arc-mainnet.json` |
 | River API | `GET /api/river?lat=7.8&lon=6.74` |
