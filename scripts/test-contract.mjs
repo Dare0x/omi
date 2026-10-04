@@ -41,7 +41,7 @@ async function setup(t, opts = {}) {
     return c;
   };
   const token = await deploy("MockUSDC", donor);
-  const fund = await deploy("OmiFund", manager, await token.getAddress(), await manager.getAddress(), await reporter.getAddress(), await guardian.getAddress(), HOUR);
+  const fund = await deploy("OmiFund", manager, await token.getAddress(), await reporter.getAddress(), await guardian.getAddress(), HOUR);
   const now = async () => (await provider.getBlock("latest")).timestamp;
   const warp = async (secs) => {
     await provider.send("evm_increaseTime", [secs]);
@@ -79,9 +79,15 @@ test("nothing can be posted before the season, and households freeze when it sta
   await reverts(c.as(c.manager).removeHousehold.staticCall(0, c.homeAddrs[0]), "SeasonUnderway");
 });
 
-test("only the right roles can act", async (t) => {
+test("anyone can open a site, but only its own manager can change it", async (t) => {
   const c = await setup(t);
-  await reverts(c.as(c.outsider).addSite.staticCall("x", 0, 0, 10, 5, (await c.now()) + 100, (await c.now()) + 200, 1, 0, 1), "NotManager");
+  const n = await c.now();
+  await (await c.as(c.outsider).addSite("Makurdi", 77750, 84750, 15444, 13000, n + 1000, n + 9000, 1, 3000, 2)).wait();
+  assert.equal((await c.fund.site(1)).manager, await c.outsider.getAddress());
+  await (await c.as(c.outsider).addHouseholds(1, [await c.donor.getAddress()])).wait();
+  await reverts(c.as(c.manager).addHouseholds.staticCall(1, [c.homeAddrs[0]]), "NotManager");
+  await reverts(c.as(c.outsider).addHouseholds.staticCall(0, [await c.donor.getAddress()]), "NotManager");
+  await reverts(c.as(c.outsider).renewSeason.staticCall(0, n + 10, n + 20), "NotManager");
   await c.warp(700);
   await reverts(c.as(c.outsider).postReading.staticCall(0, c.day0, 1, 1, src), "NotReporter");
   await (await c.as(c.reporter).postReading(0, c.day0, 1, 1, src)).wait();

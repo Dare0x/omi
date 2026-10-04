@@ -16,7 +16,6 @@ interface Deployment {
   address: string;
   guardian: string;
   reporter: string;
-  manager: string;
   challengeWindow: number;
   deployBlock: number;
   deployTx: string;
@@ -43,6 +42,7 @@ async function readNetwork(dep: Deployment) {
         id,
         kind: dep.sites?.find((x) => x.id === id)?.kind ?? "live",
         name: s.name as string,
+        manager: s.manager as string,
         lat: toNum(s.latE4) / 1e4,
         lon: toNum(s.lonE4) / 1e4,
         floodLevel: toNum(s.floodLevel),
@@ -117,7 +117,6 @@ async function readNetwork(dep: Deployment) {
     address: dep.address,
     guardian: dep.guardian,
     reporter: dep.reporter,
-    manager: dep.manager,
     challengeWindow: dep.challengeWindow,
     deployTx: dep.deployTx,
     readingCount: n,

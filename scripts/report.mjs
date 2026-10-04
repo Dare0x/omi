@@ -49,8 +49,12 @@ async function readingFor(s) {
   };
 }
 
-const deployedSites = (dep.sites ?? []).filter((s) => s.kind === "live");
-for (const { id } of deployedSites) {
+// Every site anyone has opened gets a reading, except the testnet replay site,
+// which replays 2022 instead (scripts/replay.mjs).
+const replayIds = new Set((dep.sites ?? []).filter((s) => s.kind !== "live").map((s) => s.id));
+const count = Number(await fund.siteCount());
+for (let id = 0; id < count; id++) {
+  if (replayIds.has(id)) continue;
   const s = await fund.site(id);
   const now = Math.floor(Date.now() / 1000);
   if (now < Number(s.seasonStart) || now > Number(s.seasonEnd)) {

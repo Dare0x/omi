@@ -1,6 +1,7 @@
 // npm run deploy -- arc-testnet | arc-mainnet
-// Deploys OmiFund. The deploy wallet is manager and reporter; the guardian is
-// GUARDIAN_ADDRESS (the founder's own wallet), so the reporter can't also veto.
+// Deploys OmiFund. The deploy wallet is the reporter (it posts the daily river
+// readings); the guardian is GUARDIAN_ADDRESS (the founder's own wallet), so the
+// reporter can't also veto. Anyone can open a site once it's deployed.
 import { ContractFactory, JsonRpcProvider, Wallet, formatUnits } from "ethers";
 import { compile } from "./compile.mjs";
 import { loadEnv, network, writeDeployment } from "./env.mjs";
@@ -18,7 +19,7 @@ if (bal === 0n) throw new Error("The deploy wallet has no USDC for gas. Fund it 
 
 const { OmiFund } = compile();
 const factory = new ContractFactory(OmiFund.abi, OmiFund.bytecode, wallet);
-const contract = await factory.deploy(net.usdc, wallet.address, wallet.address, guardian, CHALLENGE_WINDOW);
+const contract = await factory.deploy(net.usdc, wallet.address, guardian, CHALLENGE_WINDOW);
 const tx = contract.deploymentTransaction();
 console.log(`deploy tx ${tx.hash}`);
 const receipt = await tx.wait();
@@ -28,7 +29,6 @@ writeDeployment(net, {
   chainId: net.chainId,
   address,
   usdc: net.usdc,
-  manager: wallet.address,
   reporter: wallet.address,
   guardian,
   challengeWindow: CHALLENGE_WINDOW,

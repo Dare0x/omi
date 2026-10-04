@@ -8,11 +8,6 @@
       },
       {
         "internalType": "address",
-        "name": "manager_",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
         "name": "reporter_",
         "type": "address"
       },
@@ -332,6 +327,12 @@
         "type": "uint256"
       },
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "manager",
+        "type": "address"
+      },
+      {
         "indexed": false,
         "internalType": "string",
         "name": "name",
@@ -536,19 +537,6 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "manager",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -782,6 +770,11 @@
             "internalType": "string",
             "name": "name",
             "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "manager",
+            "type": "address"
           },
           {
             "internalType": "int32",

@@ -8,19 +8,18 @@ interface IERC20 {
 }
 
 /// @title OmiFund
-/// @notice A flood fund that pays registered households in USDC when the river
-/// crosses a level fixed before the season starts. Part of the cover is paid when
-/// the forecast says the flood is coming; the rest when the river has stayed at or
-/// above the flood level for the agreed number of days.
+/// @notice An open protocol for flood funds. Anyone can open a fund ("site") for a
+/// stretch of river, register the households it protects, and anyone can fund it.
+/// It pays those households in USDC when the river crosses a level fixed before the
+/// season starts: part when the forecast says the flood is coming, the rest when
+/// the river has stayed at or above the flood level for the agreed number of days.
 ///
 /// Money leaves this contract in exactly one way: as a payout to the households of
 /// the site it was given to, when that site's river meets its rule. There is no
-/// withdraw function. Unspent money stays with the site for its next season.
+/// withdraw function, for anyone. Unspent money stays with the site for its next season.
 contract OmiFund {
     IERC20 public immutable usdc;
-    /// Sets up sites and households. Can't change anything once a season starts.
-    address public immutable manager;
-    /// Posts the daily river reading for each site.
+    /// Posts the daily river reading for each site (the shared data layer).
     address public immutable reporter;
     /// Can veto a reading while it waits, if the posted numbers don't match the source.
     address public immutable guardian;
@@ -32,6 +31,7 @@ contract OmiFund {
 
     struct Site {
         string name;
+        address manager; // whoever opened the site; sets households before each season
         int32 latE4; // river cell, degrees x 1e4
         int32 lonE4;
         uint32 floodLevel; // m3/s; full payout after `consecutiveDays` days at or above it
@@ -69,7 +69,7 @@ contract OmiFund {
     uint256 public nextToSettle;
     uint256 public totalPaid;
 
-    event SiteAdded(uint256 indexed siteId, string name, uint32 floodLevel, uint64 seasonStart, uint64 seasonEnd);
+    event SiteAdded(uint256 indexed siteId, address indexed manager, string name, uint32 floodLevel, uint64 seasonStart, uint64 seasonEnd);
     event HouseholdAdded(uint256 indexed siteId, address indexed household);
     event HouseholdRemoved(uint256 indexed siteId, address indexed household);
     event SeasonRenewed(uint256 indexed siteId, uint64 seasonStart, uint64 seasonEnd);
@@ -105,17 +105,14 @@ contract OmiFund {
     error ZeroAmount();
     error TransferFailed();
 
-    modifier onlyManager() {
-        if (msg.sender != manager) revert NotManager();
+    modifier onlyManager(uint256 siteId) {
+        if (msg.sender != _site(siteId).manager) revert NotManager();
         _;
     }
 
-    constructor(IERC20 usdc_, address manager_, address reporter_, address guardian_, uint64 challengeWindow_) {
-        if (address(usdc_) == address(0) || manager_ == address(0) || reporter_ == address(0) || guardian_ == address(0)) {
-            revert BadSettings();
-        }
+    constructor(IERC20 usdc_, address reporter_, address guardian_, uint64 challengeWindow_) {
+        if (address(usdc_) == address(0) || reporter_ == address(0) || guardian_ == address(0)) revert BadSettings();
         usdc = usdc_;
-        manager = manager_;
         reporter = reporter_;
         guardian = guardian_;
         challengeWindow = challengeWindow_;
@@ -134,7 +131,7 @@ contract OmiFund {
         uint128 coverPerHousehold,
         uint16 earlyBps,
         uint8 consecutiveDays
-    ) external onlyManager returns (uint256 siteId) {
+    ) external returns (uint256 siteId) {
         if (
             floodLevel == 0 || warnLevel > floodLevel || seasonStart <= block.timestamp || seasonEnd <= seasonStart
                 || coverPerHousehold == 0 || earlyBps > BPS || consecutiveDays == 0
@@ -142,6 +139,7 @@ contract OmiFund {
         siteId = _sites.length;
         Site storage s = _sites.push();
         s.name = name;
+        s.manager = msg.sender;
         s.latE4 = latE4;
         s.lonE4 = lonE4;
         s.floodLevel = floodLevel;
@@ -151,12 +149,12 @@ contract OmiFund {
         s.coverPerHousehold = coverPerHousehold;
         s.earlyBps = earlyBps;
         s.consecutiveDays = consecutiveDays;
-        emit SiteAdded(siteId, name, floodLevel, seasonStart, seasonEnd);
+        emit SiteAdded(siteId, msg.sender, name, floodLevel, seasonStart, seasonEnd);
     }
 
     /// Households are fixed once the season starts, so nobody can be added after a
     /// forecast shows a flood coming.
-    function addHouseholds(uint256 siteId, address[] calldata list) external onlyManager {
+    function addHouseholds(uint256 siteId, address[] calldata list) external onlyManager(siteId) {
         Site storage s = _site(siteId);
         if (block.timestamp >= s.seasonStart) revert SeasonUnderway();
         address[] storage hs = _households[siteId];
@@ -170,7 +168,7 @@ contract OmiFund {
         }
     }
 
-    function removeHousehold(uint256 siteId, address h) external onlyManager {
+    function removeHousehold(uint256 siteId, address h) external onlyManager(siteId) {
         Site storage s = _site(siteId);
         if (block.timestamp >= s.seasonStart) revert SeasonUnderway();
         if (!isHousehold[siteId][h]) revert BadHousehold();
@@ -188,7 +186,7 @@ contract OmiFund {
 
     /// Starts a new season once the last one is over. Money left from the last
     /// season stays with the site.
-    function renewSeason(uint256 siteId, uint64 seasonStart, uint64 seasonEnd) external onlyManager {
+    function renewSeason(uint256 siteId, uint64 seasonStart, uint64 seasonEnd) external onlyManager(siteId) {
         Site storage s = _site(siteId);
         if (block.timestamp <= s.seasonEnd) revert SeasonNotOver();
         if (seasonStart <= block.timestamp || seasonEnd <= seasonStart) revert BadSettings();

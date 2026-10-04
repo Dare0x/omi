@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import LiveGauge from "@/components/LiveGauge";
+import OpenFund from "@/components/OpenFund";
 import PlaceSearch from "@/components/PlaceSearch";
 import { PeaksChart, ReplayChart, fmt, fmtDayYear } from "@/components/Charts";
 import type { RiverReport } from "@/lib/river";
@@ -221,8 +222,15 @@ function Report({ r, label }: { r: RiverReport; label: string }) {
           Up to 500 households per site, each paid {r.rules.earlyShareBps / 100}% on the forecast and the rest when the river stays over the flood level.
         </p>
         <p>
-          <Link href="/fund">See the live fund on Arc →</Link>
+          <Link href="/fund">See every fund live on Arc →</Link>
         </p>
+      </section>
+
+      <section className="section" aria-labelledby="open">
+        <div className="section-head">
+          <h2 id="open">Open a fund for this river</h2>
+        </div>
+        <OpenFund r={r} label={label} />
       </section>
     </>
   );
