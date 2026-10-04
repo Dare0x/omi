@@ -15,6 +15,7 @@ export const FEATURED: FeaturedSite[] = [
   { slug: "makurdi", name: "Makurdi", river: "Benue", country: "Nigeria", lat: 7.73, lon: 8.54 },
   { slug: "onitsha", name: "Onitsha", river: "Niger", country: "Nigeria", lat: 6.15, lon: 6.78 },
   { slug: "bahadurabad", name: "Bahadurabad", river: "Jamuna (Brahmaputra)", country: "Bangladesh", lat: 25.18, lon: 89.67 },
+  { slug: "sukkur", name: "Sukkur", river: "Indus", country: "Pakistan", lat: 27.7, lon: 68.87 },
 ];
 
 export const HOME_SITE = "lokoja";

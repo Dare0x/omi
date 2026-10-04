@@ -23,18 +23,23 @@ export default function Home() {
   return (
     <main>
       <section className="hero">
-        <p className="kicker">Flood fund · USDC on Arc · rules fixed before the season</p>
+        <p className="kicker">Open flood-fund protocol · USDC on Arc · any river on Earth</p>
         <h1>Flood money that arrives before the water does.</h1>
         <p className="lede">
           Donors fill a fund for a river town. When the forecast shows the river reaching its flood level, every registered household gets{" "}
           {r.rules.earlyShareBps / 100}% of its cover in USDC. When the river has stayed over that level for {r.rules.consecutiveDays} days,
           the rest follows. No claim forms, no assessors, nobody in between who can sit on the money.
         </p>
+        <p className="lede">
+          It works for any river on Earth: OMI sets each river&apos;s flood level from decades of its own record, and anyone can open a fund for
+          their river in one step.
+        </p>
+        <PlaceSearch />
       </section>
 
       <section className="section" aria-labelledby="live">
         <div className="section-head">
-          <h2 id="live">The river at Lokoja, right now</h2>
+          <h2 id="live">Case study: the river at Lokoja, right now</h2>
           <p>
             Lokoja is where the Niger and the Benue meet. Every number below comes from GloFAS, the global flood model the UN and the Red
             Cross use, and is checked against levels set from this river&apos;s own history.
@@ -91,13 +96,12 @@ export default function Home() {
 
       <section className="section" aria-labelledby="any">
         <div className="section-head">
-          <h2 id="any">Any river on Earth</h2>
+          <h2 id="any">Other rivers, other continents</h2>
           <p>
-            Type a town. OMI moves your point onto the main river channel nearby, sets its warning and flood levels from that river&apos;s own
-            history, replays every past year and shows today&apos;s forecast.
+            The same rules, run on rivers far from Lokoja. Each one gets its own flood level from its own record, its own replay of every past
+            year and today&apos;s forecast. Type any town in the box at the top to add another.
           </p>
         </div>
-        <PlaceSearch />
         <div className="places">
           {savedSites().map((s) => (
             <Link
