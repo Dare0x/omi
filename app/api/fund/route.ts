@@ -24,21 +24,37 @@ interface Deployment {
 
 const toNum = (v: unknown) => Number(v as bigint);
 
+// Arc's free public RPC rate-limits bursts, so reads go one at a time and
+// back off when it says "rate limit".
+async function retry<T>(fn: () => Promise<T>, tries = 5): Promise<T> {
+  let last: unknown;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      last = err;
+      const msg = String((err as Error).message ?? err);
+      if (!/rate limit|-32005|429|timeout|ECONNRESET/i.test(msg)) throw err;
+      await new Promise((r) => setTimeout(r, 400 * 2 ** i));
+    }
+  }
+  throw last;
+}
+
 async function readNetwork(dep: Deployment) {
   const net = NETWORKS[dep.network];
-  const provider = new JsonRpcProvider(net.rpc, net.chainId, { staticNetwork: true });
+  const provider = new JsonRpcProvider(net.rpc, net.chainId, { staticNetwork: true, batchMaxCount: 1 });
   const fund = new Contract(dep.address, abi, provider);
-  const [siteCount, readingCount, nextToSettle, totalPaid, latest] = await Promise.all([
-    fund.siteCount(),
-    fund.readingCount(),
-    fund.nextToSettle(),
-    fund.totalPaid(),
-    provider.getBlockNumber(),
-  ]);
-  const sites = await Promise.all(
-    [...Array(toNum(siteCount)).keys()].map(async (id) => {
-      const [s, hs] = await Promise.all([fund.site(id), fund.households(id)]);
-      return {
+  const siteCount = await retry(() => fund.siteCount());
+  const readingCount = await retry(() => fund.readingCount());
+  const nextToSettle = await retry(() => fund.nextToSettle());
+  const totalPaid = await retry(() => fund.totalPaid());
+  const latest = await retry(() => provider.getBlockNumber());
+  const sites = [];
+  for (const id of [...Array(toNum(siteCount)).keys()]) {
+    const s = await retry(() => fund.site(id));
+    const hs = await retry(() => fund.households(id));
+    sites.push({
         id,
         kind: dep.sites?.find((x) => x.id === id)?.kind ?? "live",
         name: s.name as string,
@@ -59,15 +75,14 @@ async function readNetwork(dep: Deployment) {
         lastPostedDay: toNum(s.lastPostedDay),
         streak: toNum(s.streak),
         households: hs as string[],
-      };
-    })
-  );
+    });
+  }
   const n = toNum(readingCount);
-  const ids = [...Array(Math.min(n, 30)).keys()].map((k) => n - 1 - k);
-  const readings = await Promise.all(
-    ids.map(async (id) => {
-      const r = await fund.reading(id);
-      return {
+  const ids = [...Array(Math.min(n, 20)).keys()].map((k) => n - 1 - k);
+  const readings = [];
+  for (const id of ids) {
+    const r = await retry(() => fund.reading(id));
+    readings.push({
         id,
         siteId: toNum(r.siteId),
         date: new Date(toNum(r.day) * 86_400_000).toISOString().slice(0, 10),
@@ -77,19 +92,16 @@ async function readNetwork(dep: Deployment) {
         readyAt: toNum(r.readyAt),
         vetoed: r.vetoed as boolean,
         settled: r.settled as boolean,
-      };
-    })
-  );
+    });
+  }
   // Payout events, scanned in chunks the public RPC accepts.
   const payouts: { siteId: number; kind: number; perHousehold: string; households: number; total: string; tx: string; block: number }[] = [];
   const funded: { siteId: number; donor: string; amount: string; tx: string; block: number }[] = [];
   const step = 9_000;
   for (let from = dep.deployBlock; from <= latest; from += step + 1) {
     const to = Math.min(latest, from + step);
-    const [p, f] = await Promise.all([
-      fund.queryFilter(fund.filters.Payout(), from, to),
-      fund.queryFilter(fund.filters.Funded(), from, to),
-    ]);
+    const p = await retry(() => fund.queryFilter(fund.filters.Payout(), from, to));
+    const f = await retry(() => fund.queryFilter(fund.filters.Funded(), from, to));
     for (const e of p) {
       if (!("args" in e)) continue;
       payouts.push({
