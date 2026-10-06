@@ -21,8 +21,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci --omit=dev --ignore-scripts
+      # The reporter needs only ethers; installing the whole site would pull in packages for other platforms.
+      - name: Install ethers
+        run: |
+          mkdir -p /tmp/deps && cd /tmp/deps && npm init -y > /dev/null && npm install --ignore-scripts --no-audit --no-fund ethers@6.17.0
+          ln -s /tmp/deps/node_modules "$GITHUB_WORKSPACE/node_modules"
       - name: Post today's reading and settle ready ones
         run: node scripts/report.mjs arc-testnet
         env:
