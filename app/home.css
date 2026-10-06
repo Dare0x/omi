@@ -132,6 +132,7 @@
   letter-spacing: -0.02em;
   max-width: 11.5ch;
 }
+.wh-title.long { font-size: clamp(46px, 6.4vw, 112px); max-width: 14ch; }
 .wh-m {
   display: inline-block;
   overflow: hidden;
@@ -545,4 +546,60 @@
 @media (prefers-reduced-motion: reduce) {
   .wh-cue::after, .rw-pt i::before { animation: none; }
   .rp-cap, .rp-house i, .ys-after, .ys-bar, .hp-node { transition: none; }
+}
+
+/* ── river report pages ───────────────────────────────────────────────────── */
+.rv-wait {
+  min-height: 100svh;
+  padding: calc(var(--top) + 8vh) var(--gut) 60px;
+  display: grid;
+  align-content: start;
+  gap: 22px;
+}
+.rv-wait-h {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(46px, 6.4vw, 112px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  max-width: 14ch;
+}
+.rv-wait-line {
+  display: block;
+  height: 1px;
+  background: var(--water);
+  transform-origin: 0 50%;
+  animation: rv-read 1.8s cubic-bezier(0.6, 0, 0.3, 1) infinite;
+}
+@keyframes rv-read {
+  0% { transform: scaleX(0); transform-origin: 0 50%; }
+  50% { transform: scaleX(1); transform-origin: 0 50%; }
+  51% { transform-origin: 100% 50%; }
+  100% { transform: scaleX(0); transform-origin: 100% 50%; }
+}
+.rv-wait-err { display: grid; gap: 14px; max-width: 640px; color: var(--text-2); }
+.report-body {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 var(--gut) 40px;
+}
+.report-body .section {
+  padding-block: 80px;
+  gap: 26px;
+  border-bottom: 0;
+  border-top: 1px solid var(--line);
+}
+.report-body .section:first-child { border-top: 0; }
+.report-body .section-head { gap: 14px; }
+.report-body .section-head h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(38px, 4.6vw, 72px);
+  line-height: 0.98;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.report-body .section-head p { font-size: 17px; max-width: 62ch; }
+@media (prefers-reduced-motion: reduce) {
+  .rv-wait-line { animation: none; transform: none; }
 }

@@ -11,7 +11,18 @@ const PHASE = { normal: "Normal", watch: "On watch", early: "Early payout due", 
 
 // The screen is the river gauge. The bottom edge is zero flow; the red line is this
 // river's flood level; the water stands at today's real flow at Lokoja.
-export default function WaterHero({ initial }: { initial: RiverReport }) {
+interface HeroProps {
+  initial: RiverReport;
+  refresh?: boolean;
+  title?: string;
+  kicker?: React.ReactNode;
+  lede?: React.ReactNode;
+  place?: string;
+  search?: boolean;
+  cue?: { href: string; text: string };
+}
+
+export default function WaterHero({ initial, refresh = true, title, kicker, lede, place = "The Niger at Lokoja", search = true, cue = { href: "#y2022", text: "Scroll to watch 2022 happen" } }: HeroProps) {
   const [r, setR] = useState(initial);
   const root = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -20,6 +31,8 @@ export default function WaterHero({ initial }: { initial: RiverReport }) {
 
   // Fresh reading after the saved one.
   useEffect(() => {
+    setR(initial);
+    if (!refresh) return;
     let alive = true;
     fetch(`/api/river?lat=${initial.cell.requested.lat}&lon=${initial.cell.requested.lon}`)
       .then((res) => (res.ok ? res.json() : null))
@@ -28,7 +41,7 @@ export default function WaterHero({ initial }: { initial: RiverReport }) {
     return () => {
       alive = false;
     };
-  }, [initial]);
+  }, [initial, refresh]);
 
   const now = r.status.latest?.discharge ?? 0;
   const vmax = r.floodLevel * 1.22;
@@ -125,7 +138,8 @@ export default function WaterHero({ initial }: { initial: RiverReport }) {
     if (level.current.v > 0) gsap.to(level.current, { v: nowFrac, duration: 1.6, ease: "power2.inOut" });
   }, [nowFrac]);
 
-  const words = "Flood money that arrives before the water does.".split(" ");
+  const heading = title ?? "Flood money that arrives before the water does.";
+  const words = heading.split(" ");
   const pct = (v: number) => `${(frac(v) * 100).toFixed(2)}%`;
   return (
     <section className="wh" ref={root} aria-label="The river at Lokoja, right now">
@@ -151,7 +165,7 @@ export default function WaterHero({ initial }: { initial: RiverReport }) {
         </div>
       </div>
       <div className="wh-now wh-tag" style={{ bottom: `calc(${(nowFrac * 100).toFixed(2)}% + 18px)` }}>
-        <span className="wh-now-k">The Niger at Lokoja, {r.status.latest ? new Date(r.status.latest.date + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }) : "today"}</span>
+        <span className="wh-now-k">{place}, {r.status.latest ? new Date(r.status.latest.date + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }) : "today"}</span>
         <span className="wh-now-v">
           {fmt(now)} <small>m³/s</small>
         </span>
@@ -160,8 +174,8 @@ export default function WaterHero({ initial }: { initial: RiverReport }) {
         </span>
       </div>
       <div className="wh-copy">
-        <p className="wh-kicker wh-fade">An open protocol for flood funds · USDC on Arc · any river on Earth</p>
-        <h1 className="wh-title">
+        <p className="wh-kicker wh-fade">{kicker ?? "An open protocol for flood funds · USDC on Arc · any river on Earth"}</p>
+        <h1 className={`wh-title ${heading.length > 26 ? "long" : ""}`}>
           {words.map((w, i) => (
             <span key={i}>
               <span className="wh-m">
@@ -171,15 +185,21 @@ export default function WaterHero({ initial }: { initial: RiverReport }) {
           ))}
         </h1>
         <p className="wh-lede wh-fade">
-          Every registered household gets {r.rules.earlyShareBps / 100}% of its cover in USDC when the forecast reaches the river&apos;s flood level,
-          and the rest after {r.rules.consecutiveDays} days over it. No claims. No assessors. The river decides.
+          {lede ?? (
+            <>
+              Every registered household gets {r.rules.earlyShareBps / 100}% of its cover in USDC when the forecast reaches the river&apos;s flood
+              level, and the rest after {r.rules.consecutiveDays} days over it. No claims. No assessors. The river decides.
+            </>
+          )}
         </p>
-        <div className="wh-search wh-fade">
-          <PlaceSearch />
-        </div>
+        {search && (
+          <div className="wh-search wh-fade">
+            <PlaceSearch />
+          </div>
+        )}
       </div>
-      <a className="wh-cue wh-fade" href="#y2022">
-        Scroll to watch 2022 happen
+      <a className="wh-cue wh-fade" href={cue.href}>
+        {cue.text}
       </a>
     </section>
   );

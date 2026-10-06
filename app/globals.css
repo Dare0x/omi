@@ -21,7 +21,7 @@
   --serif: var(--font-serif), "Iowan Old Style", Georgia, serif;
   --sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --page: 1080px;
+  --page: 1200px;
 }
 
 * {
@@ -140,25 +140,29 @@ a:hover {
 .kicker {
   font-family: var(--mono);
   font-size: 12px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-3);
 }
 h1 {
   font-family: var(--serif);
   font-weight: 400;
-  font-size: clamp(38px, 6vw, 64px);
-  line-height: 1.02;
-  letter-spacing: -0.01em;
+  font-size: clamp(48px, 7.2vw, 116px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
   text-wrap: balance;
-  max-width: 17ch;
+  max-width: 14ch;
 }
 h2 {
   font-family: var(--serif);
   font-weight: 400;
-  font-size: clamp(26px, 3.4vw, 34px);
-  line-height: 1.1;
+  font-size: clamp(32px, 3.9vw, 58px);
+  line-height: 1;
+  letter-spacing: -0.012em;
   text-wrap: balance;
+}
+section[id], section[aria-labelledby], h2[id] {
+  scroll-margin-top: 80px;
 }
 h3 {
   font-size: 15px;
@@ -191,7 +195,7 @@ p + p {
   border-bottom: 1px solid var(--line-2);
 }
 .section {
-  padding-block: 40px;
+  padding-block: 64px;
   border-bottom: 1px solid var(--line);
   display: grid;
   gap: 18px;
