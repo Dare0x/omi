@@ -7,6 +7,8 @@ export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 
 export function loadEnv() {
   const file = path.join(root, ".env");
+  // In CI the key arrives as an environment variable (a GitHub Actions secret).
+  if (!fs.existsSync(file) && process.env.DEPLOYER_KEY) return;
   if (!fs.existsSync(file)) throw new Error("No .env file. It holds the deploy key and is never committed.");
   for (const line of fs.readFileSync(file, "utf8").split(/\r?\n/)) {
     const m = line.match(/^([A-Z0-9_]+)=(.*)$/);

@@ -7,7 +7,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Contract, JsonRpcProvider, Wallet, keccak256, toUtf8Bytes } from "ethers";
-import { compile } from "./compile.mjs";
 import { loadEnv, network, readDeployment, root } from "./env.mjs";
 
 loadEnv();
@@ -15,8 +14,9 @@ const net = network();
 const dep = readDeployment(net);
 const provider = new JsonRpcProvider(net.rpc, net.chainId);
 const wallet = new Wallet(process.env.DEPLOYER_KEY, provider);
-const { OmiFund } = compile();
-const fund = new Contract(dep.address, OmiFund.abi, wallet);
+// The ABI the site uses too, so the reporter needs no compiler.
+const abi = JSON.parse(fs.readFileSync(path.join(root, "lib", "generated", "omiFundAbi.json"), "utf8"));
+const fund = new Contract(dep.address, abi, wallet);
 const LEAD_DAYS = 15;
 const unixDay = (iso) => Math.floor(Date.parse(iso + "T00:00:00Z") / 86_400_000);
 
