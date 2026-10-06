@@ -66,13 +66,22 @@ a:hover {
 /* ---------- frame */
 
 .site-head {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
   border-bottom: 1px solid var(--line);
+  background: rgba(11, 15, 17, 0.86);
+  backdrop-filter: saturate(1.2);
 }
-.site-head-inner,
 .frame {
   max-width: var(--page);
   margin: 0 auto;
   padding-inline: 20px;
+}
+.site-head-inner {
+  padding-inline: clamp(20px, 4.2vw, 64px);
 }
 .site-head-inner {
   display: flex;
@@ -103,7 +112,17 @@ a:hover {
   color: var(--text);
 }
 .frame {
-  padding-block: 40px 64px;
+  padding-block: 96px 64px;
+}
+/* The home page runs edge to edge; its footer keeps the reading width. */
+.frame:has(> .home) {
+  max-width: none;
+  padding: 0;
+}
+.frame:has(> .home) > .site-foot {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 24px 20px 56px;
 }
 .site-foot {
   margin-top: 72px;
@@ -528,7 +547,7 @@ tr.paid td:first-child {
 
 @media (max-width: 640px) {
   .frame {
-    padding-block: 28px 48px;
+    padding-block: 84px 48px;
   }
   .rules li {
     grid-template-columns: 1fr;
