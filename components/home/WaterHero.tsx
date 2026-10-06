@@ -7,7 +7,6 @@ import PlaceSearch from "@/components/PlaceSearch";
 import type { RiverReport } from "@/lib/river";
 
 const fmt = (n: number) => Math.round(n).toLocaleString("en-US");
-const PHASE = { normal: "Normal", watch: "On watch", early: "Early payout due", flood: "Full payout due" } as const;
 
 // The screen is the river gauge. The bottom edge is zero flow; the red line is this
 // river's flood level; the water stands at today's real flow at Lokoja.
@@ -44,7 +43,7 @@ export default function WaterHero({ initial, refresh = true, title, kicker, lede
   }, [initial, refresh]);
 
   const now = r.status.latest?.discharge ?? 0;
-  const vmax = r.floodLevel * 1.22;
+  const vmax = r.floodLevel * 1.1; // puts the flood line near the top, above the words
   const frac = (v: number) => Math.min(1, v / vmax) * 0.94;
   const nowFrac = frac(now);
   const share = now / r.floodLevel;
@@ -144,24 +143,10 @@ export default function WaterHero({ initial, refresh = true, title, kicker, lede
   return (
     <section className="wh" ref={root} aria-label="The river at Lokoja, right now">
       <canvas ref={canvas} className="wh-canvas" aria-hidden="true" />
-      <div className="wh-staff" aria-hidden="true">
-        {Array.from({ length: Math.floor(vmax / 5000) + 1 }, (_, i) => i * 5000).map((v) => (
-          <span key={v} className={v % 10000 === 0 ? "major" : ""} style={{ bottom: pct(v) }}>
-            {v % 10000 === 0 ? fmt(v) : ""}
-          </span>
-        ))}
-      </div>
       <div className="wh-lines" aria-hidden="true">
         <div className="wh-level" style={{ bottom: pct(r.floodLevel) }}>
           <i className="wh-line flood" />
-          <span className="wh-tag flood">
-            Flood level · {fmt(r.floodLevel)}
-            <span className="wh-long"> m³/s · once in 10 years</span>
-          </span>
-        </div>
-        <div className="wh-level" style={{ bottom: pct(r.warnLevel) }}>
-          <i className="wh-line warn" />
-          <span className="wh-tag warn">Warning · {fmt(r.warnLevel)}</span>
+          <span className="wh-tag flood">Flood level, {fmt(r.floodLevel)} m³/s. OMI pays here.</span>
         </div>
       </div>
       <div className="wh-now wh-tag" style={{ bottom: `calc(${(nowFrac * 100).toFixed(2)}% + 18px)` }}>
@@ -169,12 +154,10 @@ export default function WaterHero({ initial, refresh = true, title, kicker, lede
         <span className="wh-now-v">
           {fmt(now)} <small>m³/s</small>
         </span>
-        <span className="wh-now-s">
-          {PHASE[r.status.phase]} · {Math.round(share * 100)}% of its flood level
-        </span>
+        <span className="wh-now-s">{Math.round(share * 100)}% of the way to the red line</span>
       </div>
       <div className="wh-copy">
-        <p className="wh-kicker wh-fade">{kicker ?? "An open protocol for flood funds · USDC on Arc · any river on Earth"}</p>
+        <p className="wh-kicker wh-fade">{kicker ?? "omi · flood funds for any river on Earth"}</p>
         <h1 className={`wh-title ${heading.length > 26 ? "long" : ""}`}>
           {words.map((w, i) => (
             <span key={i}>
@@ -187,8 +170,8 @@ export default function WaterHero({ initial, refresh = true, title, kicker, lede
         <p className="wh-lede wh-fade">
           {lede ?? (
             <>
-              Every registered household gets {r.rules.earlyShareBps / 100}% of its cover in USDC when the forecast reaches the river&apos;s flood
-              level, and the rest after {r.rules.consecutiveDays} days over it. No claims. No assessors. The river decides.
+              The water on this screen is the Niger at Lokoja, Nigeria, today. When the river reaches the red line, every family in the fund is
+              paid in USDC, automatically. No claim forms. Nobody in between.
             </>
           )}
         </p>

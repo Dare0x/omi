@@ -85,7 +85,7 @@ export default function Replay2022({ days, floodLevel, warnLevel, warnDate, payD
         for (const m of marks) m.classList.toggle("on", day >= Number(m.dataset.at));
         const paid = day >= k.pay;
         grid.classList.toggle("paid", paid);
-        count.textContent = paid ? `${households} of ${households} paid in full` : `0 of ${households} paid`;
+        count.textContent = paid ? `${households} of ${households} families paid in full` : `0 of ${households} families paid`;
         count.dataset.tone = paid ? "paid" : "";
       }
       let c = 0;
@@ -123,8 +123,7 @@ export default function Replay2022({ days, floodLevel, warnLevel, warnDate, payD
     <section className="rp" id="y2022" ref={root} aria-label="The 2022 flood at Lokoja, replayed under OMI's rules">
       <div className="rp-stage">
         <div className="rp-top">
-          <p className="mono-k">Lokoja, Nigeria · the 2022 flood, replayed under OMI&apos;s rules</p>
-          <p className="mono-k faint rp-note">Recorded river flow (GloFAS). Archived forecasts aren&apos;t public, so the early 30% isn&apos;t shown.</p>
+          <p className="mono-k">The 2022 flood at Lokoja, played back under OMI&apos;s rules</p>
         </div>
         <div className="rp-main">
           <div className="rp-left">
@@ -140,23 +139,16 @@ export default function Replay2022({ days, floodLevel, warnLevel, warnDate, payD
                   <rect className="rp-clip" x="0" y="0" width="0" height={H} />
                 </clipPath>
               </defs>
-              {[10000, 20000, 30000].filter((v) => v < vmax).map((v) => (
-                <g key={v} className="rp-grid">
-                  <line x1="0" x2={W} y1={Y(v)} y2={Y(v)} />
-                  <text x="0" y={Y(v) - 6}>{fmt(v)}</text>
-                </g>
-              ))}
               <line x1="0" x2={W} y1={Y(floodLevel)} y2={Y(floodLevel)} className="rp-flood" />
               <line x1="0" x2={W} y1={Y(warnLevel)} y2={Y(warnLevel)} className="rp-warn" />
               <text x={W} y={Y(floodLevel) - 8} className="rp-lab flood" textAnchor="end">Flood level {fmt(floodLevel)}</text>
-              <text x={W} y={Y(warnLevel) + 18} className="rp-lab warn" textAnchor="end">Warning {fmt(warnLevel)}</text>
               <g clipPath="url(#rp-clip)">
                 <path d={area} className="rp-area" />
                 <path d={line} className="rp-line" />
               </g>
-              {markAt(k.warn, "var(--warn)", `${dayLabel(warnDate)} · warning`, 0, "warn")}
-              {markAt(k.pay, "var(--paid)", `${dayLabel(payDate)} · paid in full`, 1, "paid")}
-              {markAt(k.peak, "var(--flood)", `${dayLabel(peakDate)} · peak`, 2, "flood")}
+              {markAt(k.warn, "var(--warn)", `${dayLabel(warnDate)} warning`, 0, "warn")}
+              {markAt(k.pay, "var(--paid)", `${dayLabel(payDate)} paid`, 1, "paid")}
+              {markAt(k.peak, "var(--flood)", `${dayLabel(peakDate)} peak`, 2, "flood")}
               <circle className="rp-head" r="5" cx="0" cy={Y(days[0][1])} />
               {[["1 Aug", 0], ["1 Sep", 31], ["1 Oct", 61]].map(([l, i]) => (
                 <text key={l} x={X(Number(i))} y={H - 8} className="rp-axis">
@@ -179,11 +171,15 @@ export default function Replay2022({ days, floodLevel, warnLevel, warnDate, payD
                 <i key={i} style={{ transitionDelay: `${((i % cols) * 22 + Math.floor(i / cols) * 9).toFixed(0)}ms` }} />
               ))}
             </div>
-            <p className="rp-count mono">
-              <b>0 of {households} paid</b> <span className="faint">· an example fund of {households} households</span>
+            <p className="rp-count">
+              <b>0 of {households} families paid</b>
             </p>
           </div>
         </div>
+        <p className="rp-foot">
+          Recorded 2022 river flow from GloFAS, with an example fund of {households} families. Archived forecasts aren&apos;t public, so the early
+          30% payment isn&apos;t shown.
+        </p>
       </div>
     </section>
   );

@@ -18,7 +18,7 @@
   --warn: #e0b25a;
   --flood: #ef6461;
   --paid: #7cd3a5;
-  --serif: var(--font-serif), "Iowan Old Style", Georgia, serif;
+  --serif: var(--font-display), "Helvetica Neue", Arial, sans-serif; /* display face (Funnel Display) */
   --sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --page: 1200px;
@@ -57,7 +57,9 @@ a:hover {
   outline-offset: 2px;
 }
 
-.num,
+.num {
+  font-variant-numeric: tabular-nums;
+}
 .mono {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
@@ -94,7 +96,8 @@ a:hover {
 .wordmark {
   font-family: var(--serif);
   font-size: 26px;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: -0.04em;
   color: var(--text);
 }
 .wordmark:hover {
@@ -138,27 +141,24 @@ a:hover {
 /* ---------- type */
 
 .kicker {
-  font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 14px;
   color: var(--text-3);
 }
 h1 {
   font-family: var(--serif);
-  font-weight: 400;
+  font-weight: 500;
   font-size: clamp(48px, 7.2vw, 116px);
-  line-height: 0.95;
-  letter-spacing: -0.02em;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
   text-wrap: balance;
-  max-width: 14ch;
+  max-width: 15ch;
 }
 h2 {
   font-family: var(--serif);
-  font-weight: 400;
+  font-weight: 500;
   font-size: clamp(32px, 3.9vw, 58px);
-  line-height: 1;
-  letter-spacing: -0.012em;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
   text-wrap: balance;
 }
 section[id], section[aria-labelledby], h2[id] {
@@ -271,7 +271,8 @@ p + p {
   color: var(--text-3);
 }
 .figure .value {
-  font-family: var(--mono);
+  font-family: var(--serif);
+  font-variant-numeric: tabular-nums;
   font-size: 20px;
   font-variant-numeric: tabular-nums;
 }
@@ -305,7 +306,7 @@ p + p {
   height: auto;
 }
 .chart text {
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 11px;
   fill: var(--text-3);
 }
@@ -550,6 +551,8 @@ tr.paid td:first-child {
 }
 
 @media (max-width: 640px) {
+  .site-head-inner { flex-wrap: nowrap; }
+  .site-nav { gap: 14px; font-size: 14px; }
   .frame {
     padding-block: 84px 48px;
   }

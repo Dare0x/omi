@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { IBM_Plex_Mono, IBM_Plex_Sans, Instrument_Serif } from "next/font/google";
+import { Funnel_Display, Funnel_Sans, IBM_Plex_Mono } from "next/font/google";
 import SiteNav from "@/components/SiteNav";
 import "./globals.css";
 
-const sans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-sans" });
-const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
-const serif = Instrument_Serif({ subsets: ["latin"], weight: ["400"], variable: "--font-serif" });
+// Funnel Display for headlines and numbers, Funnel Sans for text; mono only for hashes and addresses.
+const display = Funnel_Display({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-display" });
+const sans = Funnel_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-sans" });
+const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: "OMI — flood money that arrives before the water does",
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable} ${serif.variable}`}>
+    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
       <body>
         <header className="site-head">
           <div className="site-head-inner">

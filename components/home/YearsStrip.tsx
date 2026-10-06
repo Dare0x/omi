@@ -83,8 +83,8 @@ export default function YearsStrip({ rows, floodLevel, fairShare }: { rows: Row[
         <div className="ys-foot ys-after">
           <p>2012 and 2022 were Nigeria&apos;s two worst flood years in decades.</p>
           <p>
-            {paid.length} payouts in {rows.length} years means covering a family for <b className="mono">$100</b> costs a donor about{" "}
-            <b className="mono paid">${Math.round(perHundred)}</b> a year.
+            {paid.length} payouts in {rows.length} years means covering a family for <b>$100</b> costs a donor about{" "}
+            <b className="paid">${Math.round(perHundred)}</b> a year.
           </p>
         </div>
       </div>

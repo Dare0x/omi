@@ -7,7 +7,7 @@ const LINKS = [
   { href: "/", label: "Lokoja" },
   { href: "/river", label: "Any river" },
   { href: "/fund", label: "The fund" },
-  { href: "/docs", label: "Rules & docs" },
+  { href: "/docs", label: "Docs" },
 ];
 
 export default function SiteNav() {
