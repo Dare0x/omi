@@ -39,7 +39,7 @@ Every number comes from deterministic code. No AI model produces or changes any 
 |---|---|
 | App | https://omi-one-lac.vercel.app |
 | Contract, Arc testnet | see `deployments/arc-testnet.json` |
-| Contract, Arc mainnet | see `deployments/arc-mainnet.json` |
+| The 2022 payout, replayed on Arc testnet | [0x2220ab7e…e57d78ef](https://explorer.testnet.arc.io/tx/0x2220ab7ed0e16f1dead1b2b31137832d44de91adb465d09525977c44e57d78ef) |
 | River API | `GET /api/river?lat=7.8&lon=6.74` |
 | Fund API | `GET /api/fund` |
 
