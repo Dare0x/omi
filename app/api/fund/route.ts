@@ -41,19 +41,81 @@ async function retry<T>(fn: () => Promise<T>, tries = 5): Promise<T> {
   throw last;
 }
 
+// Multicall3 (same address on most EVM chains, Arc included): many reads in one eth_call.
+const MULTICALL = "0xcA11bde05977b3631167028862bE2a173976CA11";
+const MULTICALL_ABI = [
+  "function aggregate3((address target, bool allowFailure, bytes callData)[] calls) payable returns ((bool success, bytes returnData)[] returnData)",
+];
+type Call = { fn: string; args: unknown[] };
+
+async function readAll(fund: Contract, provider: JsonRpcProvider, address: string, calls: Call[]) {
+  const iface = fund.interface;
+  try {
+    const mc = new Contract(MULTICALL, MULTICALL_ABI, provider);
+    const res = await retry(() =>
+      mc.aggregate3.staticCall(calls.map((c) => ({ target: address, allowFailure: false, callData: iface.encodeFunctionData(c.fn, c.args) })))
+    );
+    return (res as { returnData: string }[]).map((r, i) => iface.decodeFunctionResult(calls[i].fn, r.returnData)[0]);
+  } catch {
+    // No Multicall3 on this chain: one read at a time.
+    const out = [];
+    for (const c of calls) out.push(await retry(() => fund.getFunction(c.fn).staticCall(...c.args)));
+    return out;
+  }
+}
+
+type RawLog = { topics: string[]; data: string; transactionHash: string; blockNumber: number };
+
+// Every event of the contract in one request, from the explorer's Etherscan-style API.
+// Falls back to scanning the RPC in chunks, newest first, within a time budget.
+async function readLogs(dep: Deployment, provider: JsonRpcProvider, latest: number): Promise<{ logs: RawLog[]; complete: boolean }> {
+  const net = NETWORKS[dep.network];
+  try {
+    const url = `${net.explorer}/api?module=logs&action=getLogs&address=${dep.address}&fromBlock=${dep.deployBlock}&toBlock=latest`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(10_000), cache: "no-store" });
+    const j = (await res.json()) as { message?: string; result?: { topics: (string | null)[]; data: string; transactionHash: string; blockNumber: string }[] };
+    if (!Array.isArray(j.result)) throw new Error(j.message ?? "no result");
+    return {
+      logs: j.result.map((l) => ({ topics: l.topics.filter((t): t is string => !!t), data: l.data, transactionHash: l.transactionHash, blockNumber: parseInt(l.blockNumber, 16) })),
+      complete: true,
+    };
+  } catch {
+    const logs: RawLog[] = [];
+    const deadline = Date.now() + 12_000;
+    const step = 9_000;
+    let complete = true;
+    for (let to = latest; to >= dep.deployBlock; to -= step + 1) {
+      if (Date.now() > deadline) { complete = false; break; }
+      const from = Math.max(dep.deployBlock, to - step);
+      const got = await retry(() => provider.getLogs({ address: dep.address, fromBlock: from, toBlock: to }));
+      for (const l of got) logs.push({ topics: [...l.topics], data: l.data, transactionHash: l.transactionHash, blockNumber: l.blockNumber });
+    }
+    return { logs, complete };
+  }
+}
+
 async function readNetwork(dep: Deployment) {
   const net = NETWORKS[dep.network];
   const provider = new JsonRpcProvider(net.rpc, net.chainId, { staticNetwork: true, batchMaxCount: 1 });
   const fund = new Contract(dep.address, abi, provider);
-  const siteCount = await retry(() => fund.siteCount());
-  const readingCount = await retry(() => fund.readingCount());
-  const nextToSettle = await retry(() => fund.nextToSettle());
-  const totalPaid = await retry(() => fund.totalPaid());
+  const [siteCount, readingCount, nextToSettle, totalPaid] = await readAll(fund, provider, dep.address, [
+    { fn: "siteCount", args: [] },
+    { fn: "readingCount", args: [] },
+    { fn: "nextToSettle", args: [] },
+    { fn: "totalPaid", args: [] },
+  ]);
   const latest = await retry(() => provider.getBlockNumber());
+  const nSites = toNum(siteCount);
+  const n = toNum(readingCount);
+  const ids = [...Array(Math.min(n, 20)).keys()].map((k) => n - 1 - k);
+  const got = await readAll(fund, provider, dep.address, [
+    ...[...Array(nSites).keys()].flatMap((id) => [{ fn: "site", args: [id] }, { fn: "households", args: [id] }]),
+    ...ids.map((id) => ({ fn: "reading", args: [id] })),
+  ]);
   const sites = [];
-  for (const id of [...Array(toNum(siteCount)).keys()]) {
-    const s = await retry(() => fund.site(id));
-    const hs = await retry(() => fund.households(id));
+  for (let id = 0; id < nSites; id++) {
+    const s = got[2 * id];
+    const hs = got[2 * id + 1];
     sites.push({
         id,
         kind: dep.sites?.find((x) => x.id === id)?.kind ?? "live",
@@ -74,15 +136,12 @@ async function readNetwork(dep: Deployment) {
         balance: (s.balance as bigint).toString(),
         lastPostedDay: toNum(s.lastPostedDay),
         streak: toNum(s.streak),
-        households: hs as string[],
+        households: [...(hs as string[])],
     });
   }
-  const n = toNum(readingCount);
-  const ids = [...Array(Math.min(n, 20)).keys()].map((k) => n - 1 - k);
-  const readings = [];
-  for (const id of ids) {
-    const r = await retry(() => fund.reading(id));
-    readings.push({
+  const readings = ids.map((id, k) => {
+    const r = got[2 * nSites + k];
+    return {
         id,
         siteId: toNum(r.siteId),
         date: new Date(toNum(r.day) * 86_400_000).toISOString().slice(0, 10),
@@ -92,33 +151,33 @@ async function readNetwork(dep: Deployment) {
         readyAt: toNum(r.readyAt),
         vetoed: r.vetoed as boolean,
         settled: r.settled as boolean,
-    });
-  }
-  // Payout events, scanned in chunks the public RPC accepts.
+    };
+  });
   const payouts: { siteId: number; kind: number; perHousehold: string; households: number; total: string; tx: string; block: number }[] = [];
   const funded: { siteId: number; donor: string; amount: string; tx: string; block: number }[] = [];
-  const step = 9_000;
-  for (let from = dep.deployBlock; from <= latest; from += step + 1) {
-    const to = Math.min(latest, from + step);
-    const p = await retry(() => fund.queryFilter(fund.filters.Payout(), from, to));
-    const f = await retry(() => fund.queryFilter(fund.filters.Funded(), from, to));
-    for (const e of p) {
-      if (!("args" in e)) continue;
+  const { logs, complete: eventsComplete } = await readLogs(dep, provider, latest);
+  for (const l of logs) {
+    let e;
+    try {
+      e = fund.interface.parseLog({ topics: l.topics, data: l.data });
+    } catch {
+      continue;
+    }
+    if (e?.name === "Payout")
       payouts.push({
         siteId: toNum(e.args.siteId),
         kind: toNum(e.args.kind),
         perHousehold: e.args.perHousehold.toString(),
         households: toNum(e.args.households),
         total: e.args.total.toString(),
-        tx: e.transactionHash,
-        block: e.blockNumber,
+        tx: l.transactionHash,
+        block: l.blockNumber,
       });
-    }
-    for (const e of f) {
-      if (!("args" in e)) continue;
-      funded.push({ siteId: toNum(e.args.siteId), donor: e.args.donor, amount: e.args.amount.toString(), tx: e.transactionHash, block: e.blockNumber });
-    }
+    else if (e?.name === "Funded")
+      funded.push({ siteId: toNum(e.args.siteId), donor: e.args.donor, amount: e.args.amount.toString(), tx: l.transactionHash, block: l.blockNumber });
   }
+  payouts.sort((a, b) => a.block - b.block);
+  funded.sort((a, b) => a.block - b.block);
   return {
     key: net.key,
     name: net.name,
@@ -138,6 +197,7 @@ async function readNetwork(dep: Deployment) {
     readings,
     payouts,
     funded,
+    eventsComplete,
   };
 }
 
@@ -150,5 +210,5 @@ export async function GET() {
   const networks = await Promise.all(
     deps.map((d) => readNetwork(d).catch((err) => ({ key: d.network, address: d.address, error: (err as Error).message })))
   );
-  return NextResponse.json({ networks, abi }, { headers: { "cache-control": "public, s-maxage=20, stale-while-revalidate=60" } });
+  return NextResponse.json({ networks, abi }, { headers: { "cache-control": "public, s-maxage=60, stale-while-revalidate=3600" } });
 }
