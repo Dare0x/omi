@@ -181,7 +181,7 @@
 .rp-chart .rp-mark.paid text { fill: var(--paid); }
 .rp-chart .rp-mark.flood text { fill: var(--flood); }
 .rp-right { min-width: 0; display: grid; gap: 24px; align-content: center; }
-.rp-caps { position: relative; min-height: 8.5em; }
+.rp-caps { position: relative; min-height: 10em; }
 .rp-cap {
   position: absolute;
   inset: 0;

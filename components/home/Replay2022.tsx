@@ -51,7 +51,7 @@ export default function Replay2022({ days, floodLevel, warnLevel, warnDate, payD
     { at: k.over, k: dayLabel(days[k.over][0]), t: "Over the flood level. Day one of two." },
     { at: k.pay, k: dayLabel(payDate), t: "Day two. The contract pays every household in full, in one transaction.", paid: true },
     { at: k.peak, k: dayLabel(peakDate), t: `The flood peaks at ${fmt(peak)} m³/s. The money arrived ${k.peak - k.pay} days ago.`, flood: true },
-    { at: k.peak + 6, k: "After", t: "Relief usually arrives weeks after the water. This would have arrived before the worst day." },
+    { at: k.peak + 6, k: "After", t: "Aid usually arrives weeks after the water. This would have arrived first." },
   ];
   const cols = 20;
 

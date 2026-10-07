@@ -110,8 +110,11 @@ export default function WaterHero({ initial, refresh = true, title, kicker, lede
     };
   }, []);
 
-  // Entrance: the river fills to today's level, then the words rise.
+  // Entrance, once: the river fills to the level known at load, then the words rise.
+  // A fresher reading arriving later only moves the water (effect below), never replays this.
+  const firstFrac = useRef(nowFrac);
   useEffect(() => {
+    const nowFrac = firstFrac.current;
     gsap.registerPlugin(ScrollTrigger);
     const ctx = gsap.context(() => {
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -130,11 +133,11 @@ export default function WaterHero({ initial, refresh = true, title, kicker, lede
       gsap.to(amp.current, { v: 0.35, ease: "none", scrollTrigger: { trigger: root.current, start: "top top", end: "bottom top", scrub: true } });
     }, root);
     return () => ctx.revert();
-  }, [nowFrac]);
+  }, []);
 
   // A later live reading moves the water to its new height.
   useEffect(() => {
-    if (level.current.v > 0) gsap.to(level.current, { v: nowFrac, duration: 1.6, ease: "power2.inOut" });
+    if (nowFrac !== firstFrac.current) gsap.to(level.current, { v: nowFrac, duration: 1.6, ease: "power2.inOut", delay: 0.8, overwrite: "auto" });
   }, [nowFrac]);
 
   const heading = title ?? "Flood money that arrives before the water does.";
